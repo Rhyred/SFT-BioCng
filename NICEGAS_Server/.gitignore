@@ -1,0 +1,16 @@
+# Local secrets
+.env
+
+# Generated Docker data and logs
+postgres/data/
+mqtt/data/
+mqtt/log/
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db

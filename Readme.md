@@ -38,20 +38,21 @@ The AI model is planned to run locally on a separate laptop in a later phase. It
 
 ## Repository Structure
 
-The planned `nicegas-server` structure is:
+The current repository structure is:
 
 ```text
 nicegas-server/
+├── README.md
 ├── docker-compose.yml
-├── backend/
-│   ├── Dockerfile
-│   └── app/
+├── .env.example
+├── .gitignore
 ├── postgres/
+│   └── init/
 └── mqtt/
     └── mosquitto.conf
 ```
 
-These directories and files describe the approved target structure. They will be created incrementally during Phase 2.
+Phase 2.1 currently implements the Docker Compose foundation only. The `postgres/init/` directory is reserved for future initialization scripts; no business schema has been added. FastAPI backend files will be added in Phase 2.2.
 
 The Flutter application is maintained separately:
 
@@ -87,21 +88,22 @@ The server project is intended to be developed with:
 
 The Flutter toolchain and Android Studio are required for mobile application development, but are separate from the server infrastructure setup. No cloud account is required for the local Phase 2 environment.
 
-## Planned Docker Services
+## Implemented Docker Services
 
-Docker Compose will orchestrate these services:
+Docker Compose currently orchestrates exactly these services:
 
 | Service | Role |
 | --- | --- |
-| `backend` | Runs the FastAPI application and exposes the REST API. |
 | `postgres` | Runs PostgreSQL for persistent application data. |
 | `mqtt` | Runs Eclipse Mosquitto for MQTT communication with ESP32 devices. |
 
-The exact ports, credentials, health checks, volumes, and environment variables will be defined as the implementation is created. Production credentials must not be committed to the repository.
+The backend is not yet implemented. PostgreSQL and MQTT communicate through the dedicated `nicegas-network` Docker network. Host access uses the ports defined in `.env`; the development defaults are PostgreSQL `5432` and MQTT `1883`. Container-to-container access uses `postgres:5432` and `mqtt:1883`.
+
+See [`NICEGAS_Server/README.md`](NICEGAS_Server/README.md) for setup, commands, healthchecks, volumes, and development-only security limitations.
 
 ## Phase 2 Goals
 
-Phase 2, **Local Infrastructure & Backend Foundation**, is starting. Its goals are:
+Phase 2, **Local Infrastructure & Backend Foundation**, is underway. Phase 2.1 has established the local Docker foundation. Its remaining goals include:
 
 1. Establish the Docker development environment.
 2. Run the FastAPI backend in Docker.
@@ -128,15 +130,17 @@ Authentication is defined by the frozen contract as JWT Bearer authentication. B
 
 ## Development Workflow
 
-Once the planned Docker files are present, the intended local workflow is:
+For the implemented Phase 2.1 foundation, run the commands from `NICEGAS_Server/`:
 
-```bash
-# Start the local infrastructure
-docker compose up --build
-
-# Stop the local infrastructure
+```powershell
+Copy-Item .env.example .env
+docker compose up -d
+docker compose ps
+docker compose logs
 docker compose down
 ```
+
+Named volumes preserve service data after `docker compose down`. Use `docker compose down -v` only when intentionally removing local data. The environment is for local development only; production authentication, TLS, and public exposure are not configured.
 
 Development should proceed in small, verifiable steps:
 
@@ -147,7 +151,7 @@ Development should proceed in small, verifiable steps:
 5. Add and test the initial project and device endpoints against the frozen API contract.
 6. Connect the separately developed Flutter application after the local API is stable.
 
-The commands above describe the intended workflow; they are not evidence that the Docker services have already been implemented.
+The FastAPI backend and Flutter-to-backend workflow remain future work.
 
 ## Current Project Status
 
@@ -155,11 +159,12 @@ The commands above describe the intended workflow; they are not evidence that th
 | --- | --- |
 | Phase 0: Flutter Foundation | **Completed** |
 | Phase 1: System Configuration & Contracts | **Completed and frozen** |
-| Phase 2: Local Infrastructure & Backend Foundation | **Starting** |
-| Docker Compose environment | Planned for Phase 2 |
+| Phase 2: Local Infrastructure & Backend Foundation | **In progress** |
+| Phase 2.1: Docker foundation | **Implemented** |
+| Docker Compose environment | **Implemented: PostgreSQL and MQTT only** |
 | FastAPI backend | Planned for Phase 2 |
-| PostgreSQL service | Planned for Phase 2 |
-| MQTT broker service | Planned for Phase 2 |
+| PostgreSQL service | **Implemented for local development** |
+| MQTT broker service | **Implemented for local development** |
 | Flutter-to-backend integration | Future Phase 2 follow-up |
 | Authentication | Future work; excluded from initial infrastructure setup |
 | AI model integration | Future work |
