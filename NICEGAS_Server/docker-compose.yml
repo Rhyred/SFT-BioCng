@@ -21,13 +21,14 @@ services:
       start_period: 10s
 
   mqtt:
-    image: eclipse-mosquitto:2
+    build:
+      context: ./mqtt
+      dockerfile: Dockerfile
     container_name: nicegas-mqtt
     restart: unless-stopped
     ports:
       - "${MQTT_PORT}:1883"
     volumes:
-      - ./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - mqtt_data:/mosquitto/data
       - mqtt_log:/mosquitto/log
     networks:
@@ -38,6 +39,28 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nicegas-backend
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    environment:
+      - DATABASE_HOST=${DATABASE_HOST:-postgres}
+      - DATABASE_PORT=${POSTGRES_PORT:-5432}
+      - DATABASE_NAME=${POSTGRES_DB}
+      - DATABASE_USER=${POSTGRES_USER}
+      - DATABASE_PASSWORD=${POSTGRES_PASSWORD}
+      - APP_PORT=${APP_PORT:-8000}
+      - APP_HOST=0.0.0.0
+    networks:
+      - nicegas-network
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 networks:
   nicegas-network:

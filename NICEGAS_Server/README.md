@@ -95,11 +95,44 @@ Use `docker compose down -v` only when intentionally deleting the local database
 
 This is a local development environment. Mosquitto anonymous access is intentionally enabled, and TLS, production authentication, cloud IAM, and public exposure are not implemented. Do not expose this configuration to an untrusted network or reuse its credentials in production.
 
+## Database Migrations & Seeding
+
+The application uses Alembic for database migrations. The initial schema is already generated.
+
+To run migrations to the latest version:
+```powershell
+docker compose exec backend alembic upgrade head
+```
+
+To seed the database with local development data:
+```powershell
+docker compose exec backend python seed_data.py
+```
+
+## API Endpoints
+
+The Core REST API is exposed at `http://localhost:8000`:
+- `GET /health`
+- `GET /projects`
+- `GET /devices`
+- `GET /devices/{deviceId}`
+- `GET /telemetry`
+- `GET /alerts`
+
+Authentication is intentionally deferred to a later phase. The API is accessible without a token.
+MQTT ingestion is not yet connected to the database. Telemetry data can be populated via `seed_data.py`.
+
 ## Current Status
 
 - Phase 0: Flutter Foundation — completed.
 - Phase 1: System Configuration & Contracts — completed and frozen.
-- Phase 2.1: Docker Foundation — implemented.
-- Phase 2.2: FastAPI Backend — not started.
+- Phase 2.1: Docker Foundation — completed.
+- Phase 2.2: FastAPI Backend — completed.
+- **Phase 2.3: Database Schema & Core REST API — IMPLEMENTED.**
 
-No backend code, API routes, business database schema, Flutter integration, ESP32 hardware integration, AI service, cloud infrastructure, or Kubernetes configuration is included in Phase 2.1.
+### Future Features
+- Authentication (JWT)
+- ESP32 MQTT to PostgreSQL integration
+- Digital Twin
+- AI Predictions
+- Flutter Integration
