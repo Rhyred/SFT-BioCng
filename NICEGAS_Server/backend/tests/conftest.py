@@ -14,7 +14,7 @@ from app.core.config import settings
 # So we use the same postgres DB but run each test in a transaction that rolls back.
 
 engine = create_engine(settings.database_url, poolclass=StaticPool)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, expire_on_commit=False)
 
 @pytest.fixture(scope="session")
 def setup_db():
