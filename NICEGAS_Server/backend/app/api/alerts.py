@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from pydantic import UUID4
 from typing import Optional
 from app.db.database import get_db
+from app.models.user import User
+from app.api.deps import get_current_user
 from app.repositories import alert as alert_repo
 from app.schemas.alert import AlertResponse
 from app.schemas.common import PaginatedResponse
@@ -13,6 +15,7 @@ router = APIRouter()
 @router.get("", response_model=PaginatedResponse[AlertResponse])
 def get_alerts(
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
     device_id: Optional[UUID4] = None,
     severity: Optional[str] = None,
     status: Optional[str] = None,

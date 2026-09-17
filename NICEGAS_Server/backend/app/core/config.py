@@ -22,6 +22,19 @@ class Settings(BaseSettings):
     MQTT_KEEPALIVE: int = 60
     MQTT_RECONNECT_DELAY: int = 5
 
+    # JWT / Auth config (Environment-driven, development fallback for local testing)
+    JWT_SECRET_KEY: str = "nicegas-insecure-dev-secret-key-change-in-env-production"
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
+
+    # AI Service config
+    AI_PROVIDER: str = "dmr"
+    AI_BASE_URL: str = "http://model-runner.docker.internal/v1"
+    AI_MODEL: str = "huggingface.co/huggingfacetb/smollm2-1.7b-instruct-gguf:latest"
+    AI_TIMEOUT_SECONDS: float = 30.0
+    AI_MAX_TOKENS: int = 512
+    AI_TEMPERATURE: float = 0.2
+
     @property
     def database_url(self) -> str:
         return f"postgresql+psycopg://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"

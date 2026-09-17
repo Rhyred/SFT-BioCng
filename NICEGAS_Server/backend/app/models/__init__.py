@@ -3,6 +3,7 @@ from app.models.project import Project
 from app.models.device import Device
 from app.models.telemetry import Telemetry
 from app.models.alert import Alert
+from app.models.user import User
 
 __all__ = [
     "UUIDMixin",
@@ -10,5 +11,6 @@ __all__ = [
     "Project",
     "Device",
     "Telemetry",
-    "Alert"
+    "Alert",
+    "User"
 ]

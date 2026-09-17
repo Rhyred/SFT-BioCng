@@ -53,3 +53,65 @@ def client(db_session):
         yield test_client
     
     app.dependency_overrides.clear()
+
+@pytest.fixture()
+def test_user(db_session):
+    import uuid
+    from app.models.user import User
+    from app.core.security import hash_password
+    
+    user = User(
+        id=uuid.uuid4(),
+        username="test_operator",
+        email="test_operator@nicegas.local",
+        name="Test Operator",
+        role="operator",
+        hashed_password=hash_password("test_pass_123"),
+        is_active=True
+    )
+    db_session.add(user)
+    db_session.commit()
+    return user
+
+@pytest.fixture()
+def admin_user(db_session):
+    import uuid
+    from app.models.user import User
+    from app.core.security import hash_password
+    
+    user = User(
+        id=uuid.uuid4(),
+        username="test_admin",
+        email="test_admin@nicegas.local",
+        name="Test Admin",
+        role="admin",
+        hashed_password=hash_password("test_admin_pass"),
+        is_active=True
+    )
+    db_session.add(user)
+    db_session.commit()
+    return user
+
+@pytest.fixture()
+def auth_headers(test_user):
+    from app.core.security import create_access_token
+    token = create_access_token({
+        "sub": str(test_user.id),
+        "role": test_user.role,
+        "name": test_user.name,
+        "email": test_user.email,
+        "username": test_user.username,
+    })
+    return {"Authorization": f"Bearer {token}"}
+
+@pytest.fixture()
+def admin_auth_headers(admin_user):
+    from app.core.security import create_access_token
+    token = create_access_token({
+        "sub": str(admin_user.id),
+        "role": admin_user.role,
+        "name": admin_user.name,
+        "email": admin_user.email,
+        "username": admin_user.username,
+    })
+    return {"Authorization": f"Bearer {token}"}

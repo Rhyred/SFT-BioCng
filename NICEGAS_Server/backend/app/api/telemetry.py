@@ -4,6 +4,8 @@ from pydantic import UUID4
 from datetime import datetime
 from typing import Optional
 from app.db.database import get_db
+from app.models.user import User
+from app.api.deps import get_current_user
 from app.repositories import telemetry as telemetry_repo
 from app.schemas.telemetry import TelemetryResponse
 from app.schemas.common import PaginatedResponse
@@ -18,6 +20,7 @@ def get_telemetry(
     end_time: datetime,
     component: Optional[str] = None,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100)
 ):

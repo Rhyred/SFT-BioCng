@@ -1,0 +1,108 @@
+# Walkthrough — NICEGAS Bio-CNG ESP32 Real MQTT Telemetry Publisher
+
+Firmware ESP32 Real MQTT Telemetry Publisher telah berhasil dibuat dan diintegrasikan berdasarkan hasil audit repository dan skematik hardware yang Anda rancang.
+
+---
+
+## 1. Analisis Skematik Hardware & Pin Mapping
+
+Berdasarkan skematik *"WIRING DIAGRAM SISTEM IoT BIOCNG - Full Power & Signal Wiring"*:
+
+```
+ADAPTOR 9V 2A ──► KABEL 4 CABANG ──► STEPDOWN LM2596 (5V 3A) ──► ESP32 (VIN / 5V)
+                                                                   └── SENSOR & AKTUATOR
+```
+
+Pinout yang telah diimplementasikan pada firmware ([firmware/include/PinDefinitions.h](file:///c:/CORESIGHT/NICEGAS/firmware/include/PinDefinitions.h)):
+
+| Node | Sensor / Aktuator | Pin ESP32 (DEVKIT V1) | Sinyal | Keterangan |
+| :--- | :--- | :--- | :--- | :--- |
+| **Node 1: Biodigester** *(Active)* | **Suhu (DS18B20)** | **D4 (GPIO2)** | Digital 1-Wire | Temperatur digester |
+| | **CH4 (MQ-4)** | **A0 (GPIO34 / ADC1_CH6)** | Analog | Konsentrasi metana |
+| | **pH Meter (PH-4502C)** | **A1 (GPIO35 / ADC1_CH7)** | Analog | pH slurry |
+| **Node 2: Purifikasi** *(Ready)* | H2S (MQ-136) | A0 (GPIO34) | Analog | Gas H2S |
+| | CO2 (MQ-135) | A1 (GPIO35) | Analog | Gas CO2 |
+| **Node 3: Kompresi** *(Ready)* | CH4 (MQ-4) | A0 (GPIO34) | Analog | Gas CH4 kompresi |
+| | Pressure Transducer (0–10 MPa) | A1 (GPIO35) | Analog | Tekanan kompresi |
+| **Node 4: Aktuasi** *(Ready)* | Solenoid Valve Gas | D5 (GPIO14) | Digital Out | Valve control |
+| | Relay 4 Channel | D18, D19, D21, D22 | Digital Out | Relay control |
+
+---
+
+## 2. Struktur Firmware yang Dibuat
+
+Firmware dibuat modular dengan standar industri C++ (PlatformIO) serta versi single-sketch (Arduino IDE):
+
+```
+firmware/
+├── platformio.ini                        # Konfigurasi PlatformIO & library dependencies
+├── README.md                             # Dokumentasi lengkap firmware & petunjuk flashing
+├── include/
+│   ├── Config.h                          # Konfigurasi terpusat (WiFi, Broker, Project Name, Timers)
+│   ├── PinDefinitions.h                  # Definisi pinout sesuai skematik fisik
+│   ├── WiFiManager.h                     # Header WiFi lifecycle & exponential backoff
+│   ├── TimeManager.h                     # Header NTP UTC ISO 8601 synchronization
+│   ├── MQTTManager.h                     # Header MQTT client, LWT, dan telemetry publisher
+│   └── TelemetrySimulator.h              # Header bounded drift simulation biodigester
+├── src/
+│   ├── main.cpp                          # Main loop orchestrator (non-blocking)
+│   ├── WiFiManager.cpp                   # Implementasi non-blocking WiFi
+│   ├── TimeManager.cpp                   # Implementasi SNTP sync
+│   ├── MQTTManager.cpp                   # Implementasi MQTT LWT & Online retain
+│   └── TelemetrySimulator.cpp            # Implementasi drift telemetri halus
+└── nicegas_esp32_arduino/
+    └── nicegas_esp32_arduino.ino         # Single-sketch version untuk Arduino IDE
+```
+
+---
+
+## 3. MQTT Contract & Payload Validation
+
+### A. Topics
+1. **Telemetry**:
+   ```
+   nicegas/Bio-CNG Plant Alpha/DIGESTER-01/telemetry/biodigester
+   ```
+2. **Status (LWT & Connect)**:
+   ```
+   nicegas/Bio-CNG Plant Alpha/DIGESTER-01/status/connection
+   ```
+
+### B. Status Payloads (Retained = true, QoS = 1)
+- **LWT (Last Will / Unclean Disconnect)**:
+  ```json
+  {"status": "offline"}
+  ```
+- **Online (Clean Connect)**:
+  ```json
+  {
+    "status": "online",
+    "timestamp": "2026-09-11T08:05:00Z",
+    "device_id": "DIGESTER-01",
+    "device_name": "ESP32 Biodigester Node"
+  }
+  ```
+
+### C. Telemetry Payload (Published every 3s, QoS 0/1, Retain = false)
+```json
+{
+  "timestamp": "2026-09-11T08:05:03Z",
+  "status": "nominal",
+  "metrics": {
+    "temperature": { "v": 37.45, "u": "°C" },
+    "pressure": { "v": 1.26, "u": "bar" },
+    "methane": { "v": 61.2, "u": "%" },
+    "gas_flow": { "v": 25.4, "u": "Nm³/h" },
+    "ph": { "v": 7.12, "u": "pH" }
+  }
+}
+```
+
+---
+
+## 4. Keamanan & Stabilitas
+
+1. **No Credential Leaks**: Kredensial WiFi (`WIFI_PASSWORD`) dan MQTT (`MQTT_PASSWORD`) **tidak pernah di-print** ke Serial Monitor.
+2. **No Infinite Reboot Loops**: Seluruh reconnect logic menggunakan timer non-blocking (`millis()`) dan exponential backoff.
+3. **No Delay Blocking**: Loop MQTT, WiFi, dan telemetri berjalan lancar tanpa delay panjang.
+4. **NTP Fallback**: Apabila koneksi internet ke pool NTP lambat saat boot, TimeManager menggunakan fallback UTC yang valid sehingga sistem tidak pernah hang.
