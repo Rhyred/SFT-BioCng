@@ -27,9 +27,9 @@ The project is currently executing Phase 4, establishing the Realtime IoT founda
 | 4.8   | Operator First-Run Configuration               | ⏳ PLANNED              |
 | 4.9   | Offline Buffering & Data Continuity            | ⏸️ DEFERRED           |
 | 5     | Production Security & Access Control           | ⏳ PLANNED              |
-| 6     | Alerting, Analytics & Operational Intelligence | 🔮 FUTURE               |
-| 7     | AI Agent                                       | 🔮 FUTURE               |
-| 8     | Digital Twin & Advanced Visualization          | 🔮 FUTURE               |
+| 6     | Alerting, Audible Alarm & Operator Flow        | ✅ IMPLEMENTED (APP)    |
+| 7     | N.E.X.A. AI Operational Companion (J.A.R.V.I.S)| ✅ IMPLEMENTED (APP)    |
+| 8     | 3D Digital Twin Viewer & Visualization         | ✅ IMPLEMENTED (APP)    |
 | 9     | Cloud, Multi-Site & Production Scale           | 🔮 FUTURE               |
 
 ---
@@ -337,32 +337,36 @@ Planned security work:
 * MQTT username/password authentication, MQTT TLS, certificate strategy, device credentials, operator authentication, JWT authentication, authorization, role-based access control, secret management, secure configuration storage, audit logging, production deployment hardening.
   *(Development anonymous MQTT access is not acceptable for production.)*
 
-### PHASE 6: Alerting, Analytics & Operational Intelligence
+### PHASE 6: Alerting, Audible Alarm & Operator Flow
 
-**STATUS: 🔮 FUTURE**
+**STATUS: ✅ IMPLEMENTED IN FLUTTER APP**
 
-Potential capabilities:
+Implemented capabilities in Flutter:
+* Gojek-driver style urgent alert pop-up with animated pulsing radar rings.
+* Continuous audible siren/sound effect (`beep_warning.mp3`) routed through alarm channel.
+* Haptic feedback vibration (`HapticFeedback.heavyImpact()`).
+* Two-step operator acknowledgment workflow: "KONFIRMASI & TANGANI" and "Buka di Log System".
+* Anti-spam tracking to prevent repeated modal pop-ups for already acknowledged alert IDs.
+* App settings toggle for emergency sound effects (`soundAlertsEnabled`).
 
-* Advanced alert rules, alert prioritization, alert acknowledgement workflow, notification routing, trend analysis, anomaly detection, predictive maintenance, operational recommendations, historical analytics, report generation.
-  *(AI or predictive maintenance is not currently implemented.)*
+### PHASE 7: N.E.X.A. AI Operational Companion (J.A.R.V.I.S. Mode)
 
-### PHASE 7: AI Agent
+**STATUS: ✅ IMPLEMENTED IN FLUTTER APP**
 
-**STATUS: 🔮 FUTURE**
+Implemented capabilities in Flutter:
+* Dual interaction modes: Technical Chat Interface & Fullscreen Voice-driven LIVE Visualizer.
+* Natural-language operational queries and real-time plant telemetry analysis.
+* Text-to-Speech (TTS) integration with Auto-Speak toggle and adjustable speech rate.
+* Telemetry context mapping across Biodigester, Purification, and Compression stages.
 
-Possible future AI capabilities:
+### PHASE 8: 3D Digital Twin Viewer & Visualization
 
-* Natural-language operational queries, telemetry explanation, alert explanation, maintenance recommendations, incident summarization, operator assistance, contextual plant knowledge.
-  *(This phase depends on stable telemetry, historical data, alert quality, and production security. The AI Agent is not currently available.)*
+**STATUS: ✅ IMPLEMENTED IN FLUTTER APP**
 
-### PHASE 8: Digital Twin & Advanced Visualization
-
-**STATUS: 🔮 FUTURE**
-
-Possible future capabilities:
-
-* Plant topology visualization, device relationship mapping, process visualization, live equipment state, historical playback, alarm overlays, asset-level context, Digital Twin representation.
-  *(Digital Twin functionality is not currently implemented.)*
+Implemented capabilities in Flutter:
+* Interactive plant-wide 3D model viewer (`BioCNG_Plant.glb`) powered by `model_viewer_plus`.
+* Node-specific 3D Digital Twins (`SensorNodeBiodigester.glb`, `SensorNodePurifikasi.glb`, `SensorNodeKompresi.glb`).
+* Automated camera pivots and target focus for Biodigester, H2S Scrubber, Gas Holder, Buffer Tank, Compressor, and Gas Cylinder.
 
 ### PHASE 9: Cloud, Multi-Site & Production Scale
 
