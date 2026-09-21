@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import httpx
 
 from app.core.config import settings
@@ -37,6 +37,9 @@ class DMRProvider(AIProvider):
         system: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
+        model_override: Optional[str] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+        tool_choice: Optional[str] = None,
     ) -> AIChatResponse:
         start_time = time.perf_counter()
         
@@ -45,14 +48,29 @@ class DMRProvider(AIProvider):
         if system:
             payload_messages.append({"role": "system", "content": system})
         for msg in messages:
-            payload_messages.append({"role": msg.role, "content": msg.content})
+            msg_dict: Dict[str, Any] = {"role": msg.role}
+            if msg.content is not None:
+                msg_dict["content"] = msg.content
+            if msg.tool_calls is not None:
+                msg_dict["tool_calls"] = msg.tool_calls
+            if msg.tool_call_id is not None:
+                msg_dict["tool_call_id"] = msg.tool_call_id
+            if msg.name is not None:
+                msg_dict["name"] = msg.name
+            payload_messages.append(msg_dict)
 
-        payload = {
-            "model": self.model,
+        effective_model = model_override or self.model
+
+        payload: Dict[str, Any] = {
+            "model": effective_model,
             "messages": payload_messages,
             "temperature": temperature if temperature is not None else settings.AI_TEMPERATURE,
             "max_tokens": max_tokens if max_tokens is not None else settings.AI_MAX_TOKENS,
         }
+
+        if tools:
+            payload["tools"] = tools
+            payload["tool_choice"] = tool_choice or "auto"
 
         endpoint = f"{self.base_url}/chat/completions"
 
@@ -88,11 +106,15 @@ class DMRProvider(AIProvider):
             if not choices or not isinstance(choices, list):
                 raise ValueError("Response choices array is empty or missing")
             
-            message_obj = choices[0].get("message") or {}
-            content = message_obj.get("content", "")
-            if not content:
-                # Handle possible alternative choices format or empty string
-                content = choices[0].get("text", "")
+            choice = choices[0]
+            message_obj = choice.get("message") or {}
+            content = message_obj.get("content") or ""
+            if not content and not message_obj.get("tool_calls"):
+                # Handle possible alternative choices format
+                content = choice.get("text", "")
+            
+            finish_reason = choice.get("finish_reason", "stop")
+            tool_calls = message_obj.get("tool_calls")
             
             usage_data = data.get("usage")
             usage = None
@@ -105,10 +127,12 @@ class DMRProvider(AIProvider):
 
             return AIChatResponse(
                 content=content,
-                model=data.get("model", self.model),
+                model=data.get("model", effective_model),
                 provider="dmr",
                 latency_ms=latency_ms,
                 usage=usage,
+                finish_reason=finish_reason,
+                tool_calls=tool_calls,
             )
         except Exception as exc:
             logger.error("Failed to parse DMR response payload: %s", exc)

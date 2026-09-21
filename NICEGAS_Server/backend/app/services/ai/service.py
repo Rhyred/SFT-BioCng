@@ -49,6 +49,7 @@ class AIService:
         system: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
+        model_override: Optional[str] = None,
     ) -> AIChatResponse:
         """Sends a generic chat query through the configured provider."""
         # Enforce parameter bounds
@@ -65,10 +66,13 @@ class AIService:
 
         messages = [ChatMessage(role="user", content=message)]
 
+        # Resolve model for this task (falls back to AI_MODEL if unset)
+        effective_model = model_override or settings.resolve_model("chat")
+
         logger.info(
             "[AI] provider=%s action=chat model=%s max_tokens=%s",
             settings.AI_PROVIDER,
-            settings.AI_MODEL,
+            effective_model,
             bounded_max_tokens or settings.AI_MAX_TOKENS,
         )
 
@@ -77,6 +81,7 @@ class AIService:
             system=effective_system,
             temperature=bounded_temperature,
             max_tokens=bounded_max_tokens,
+            model_override=effective_model,
         )
 
         logger.info(
@@ -139,12 +144,14 @@ class AIService:
             pre_analysis.status,
         )
 
-        # Step 4: LLM invocation
+        # Step 4: LLM invocation — route to analysis model
+        analysis_model = settings.resolve_model("analysis")
         chat_response = await self.chat(
             message=user_prompt,
             system=sys_prompt,
             temperature=0.1,  # Conservative low temperature for factual grounding
             max_tokens=512,
+            model_override=analysis_model,
         )
 
         # Step 5: JSON parsing & deterministic status reconciliation

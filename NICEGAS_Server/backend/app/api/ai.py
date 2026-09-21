@@ -6,14 +6,18 @@ from app.db.database import get_db
 from app.models.user import User
 from app.api.deps import get_current_user
 from app.repositories import device as device_repo
+from app.repositories import project as project_repo
 from app.schemas.ai import (
     AIChatRequest,
     AIChatResponse,
     AIHealthResponse,
     TelemetryAnalysisRequest,
     TelemetryAnalysisResponse,
+    AgentChatRequest,
+    AgentChatResponse,
 )
 from app.services.ai.service import ai_service
+from app.services.ai.agent import nexa_agent
 from app.core.exceptions import (
     AIProviderUnavailableException,
     AIRequestTimeoutException,
@@ -152,4 +156,63 @@ async def analyze_telemetry(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"code": "AI_INTERNAL_ERROR", "message": "An unexpected error occurred in AI service"},
+        )
+
+
+@router.post("/agent/chat", response_model=AgentChatResponse)
+async def ai_agent_chat(
+    request: AgentChatRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """NEXA Industrial Agent Chat endpoint with read-only tool calling.
+    
+    Protected by JWT authentication.
+    Scoped to authenticated user context.
+    """
+    if request.project_id:
+        proj = project_repo.get(db, id=request.project_id)
+        if not proj:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"code": "PROJECT_NOT_FOUND", "message": f"Project {request.project_id} not found"},
+            )
+
+    try:
+        response = await nexa_agent.run(
+            message=request.message,
+            db=db,
+            user=current_user,
+            system=request.system,
+            project_id=request.project_id,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens,
+            max_rounds=request.max_rounds,
+            model_override=request.model,
+        )
+        return response
+    except AIRequestTimeoutException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail={"code": "AI_REQUEST_TIMEOUT", "message": str(exc)},
+        )
+    except AIProviderUnavailableException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"code": "AI_PROVIDER_UNAVAILABLE", "message": str(exc)},
+        )
+    except AIResponseInvalidException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={"code": "AI_RESPONSE_INVALID", "message": str(exc)},
+        )
+    except AIException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": exc.code, "message": exc.message},
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": "AI_INTERNAL_ERROR", "message": f"An unexpected error occurred in NEXA Agent: {str(exc)}"},
         )

@@ -35,6 +35,24 @@ class Settings(BaseSettings):
     AI_MAX_TOKENS: int = 512
     AI_TEMPERATURE: float = 0.2
 
+    # Multi-model routing (empty string falls back to AI_MODEL)
+    AI_MODEL_CHAT: str = ""
+    AI_MODEL_ANALYSIS: str = ""
+    AI_MODEL_GENERAL: str = ""
+
+    # Agent settings (Phase 2+)
+    AI_AGENT_MAX_TOOL_ROUNDS: int = 5
+
+    def resolve_model(self, task: str = "chat") -> str:
+        """Resolves the model ID for a given task, falling back to AI_MODEL."""
+        if task == "chat" and self.AI_MODEL_CHAT:
+            return self.AI_MODEL_CHAT
+        elif task == "analysis" and self.AI_MODEL_ANALYSIS:
+            return self.AI_MODEL_ANALYSIS
+        elif task == "general" and self.AI_MODEL_GENERAL:
+            return self.AI_MODEL_GENERAL
+        return self.AI_MODEL
+
     @property
     def database_url(self) -> str:
         return f"postgresql+psycopg://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"

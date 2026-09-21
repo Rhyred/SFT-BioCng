@@ -65,6 +65,10 @@ services:
       - AI_TIMEOUT_SECONDS=${AI_TIMEOUT_SECONDS:-30.0}
       - AI_MAX_TOKENS=${AI_MAX_TOKENS:-512}
       - AI_TEMPERATURE=${AI_TEMPERATURE:-0.2}
+      - AI_MODEL_CHAT=${AI_MODEL_CHAT:-}
+      - AI_MODEL_ANALYSIS=${AI_MODEL_ANALYSIS:-}
+      - AI_MODEL_GENERAL=${AI_MODEL_GENERAL:-}
+      - AI_AGENT_MAX_TOOL_ROUNDS=${AI_AGENT_MAX_TOOL_ROUNDS:-5}
     networks:
       - nicegas-network
     depends_on:

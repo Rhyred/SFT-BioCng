@@ -31,11 +31,39 @@ class AIChatRequest(BaseModel):
 
 
 class AIChatResponse(BaseModel):
-    content: str
+    content: Optional[str] = ""
     model: str
     provider: str
     latency_ms: float
     usage: Optional[TokenUsage] = None
+    finish_reason: Optional[str] = None
+    tool_calls: Optional[List[Dict[str, Any]]] = None
+
+
+class ToolInvocation(BaseModel):
+    tool_name: str
+    arguments: Dict[str, Any] = Field(default_factory=dict)
+    result: Any
+
+
+class AgentChatRequest(BaseModel):
+    message: str = Field(..., min_length=1, description="User prompt message")
+    system: Optional[str] = Field(None, description="Optional system guidance context override")
+    project_id: Optional[UUID4] = Field(None, description="Optional target project ID context scope")
+    temperature: Optional[float] = Field(None, ge=0.0, le=1.0, description="Sampling temperature (0.0 - 1.0)")
+    max_tokens: Optional[int] = Field(None, ge=1, le=2048, description="Maximum tokens per step")
+    max_rounds: Optional[int] = Field(None, ge=1, le=10, description="Maximum agent tool rounds (default from config)")
+    model: Optional[str] = Field(None, description="Optional model ID override (e.g. docker.io/ai/qwen3:8b-q4_K_M or docker.io/ai/qwen3.5:latest)")
+
+
+class AgentChatResponse(BaseModel):
+    content: str
+    model: str
+    provider: str
+    latency_ms: float
+    tool_invocations: List[ToolInvocation] = Field(default_factory=list)
+    usage: Optional[TokenUsage] = None
+    finish_reason: Optional[str] = None
 
 
 class AIHealthResponse(BaseModel):
