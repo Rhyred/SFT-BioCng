@@ -414,7 +414,7 @@ def seed_data():
                 "component": "purifikasi",
                 "severity": "CRITICAL",
                 "status": "ACTIVE",
-                "message": "H2S scrubber media saturation reached (19.8 ppm exceeds safety threshold)",
+                "message": "Level CO₂ terdeteksi di atas batas operasional (CO₂: 3.8%)",
                 "timestamp": now - timedelta(minutes=20)
             },
             {
